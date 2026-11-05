@@ -3,9 +3,10 @@ import assert from 'node:assert/strict';
 import { analyzeExpression } from '../src/lib/expressions.ts';
 import { buildExpressionFrames } from '../src/lib/expression-frames.ts';
 import { operateTree, parseValues, traversalSteps, values, balance, type TreeMode, type TreeNode } from '../src/lib/trees.ts';
-import { expressionExamples, treeExamples } from '../src/content/examples.ts';
-import { allTopics, catalog, liveTopics, topicAt, topicHref } from '../src/lib/catalog.ts';
-import { topicNotes } from '../src/content/topic-notes.ts';
+import { expressionExamples, toolExamples, treeExamples } from '../src/content/examples.ts';
+import { analyzeExpressionTree } from '../src/lib/expression-tree.ts';
+import { traceBrackets } from '../src/lib/balanced-brackets.ts';
+import { allTopics, catalog, groupStatus, guideHref, topicAt } from '../src/lib/catalog.ts';
 import { searchEntries, searchSnippet, toHeadingId, type SearchEntry } from '../src/lib/search.ts';
 
 test('converted forms always evaluate to the same value, including negative literals', () => {
@@ -187,15 +188,39 @@ test('traversals visit every node once in the right order', () => {
   assert.deepEqual(traversalSteps(null, 'in'), []);
 });
 
-test('the topic catalog has no duplicates, and every ready topic has a page', () => {
+test('every expression tool example gives its documented outcome', () => {
+  const each = <T,>(levels: { items: T[] }[], check: (item: T) => void) => levels.forEach(level => level.items.forEach(check));
+  each(toolExamples.tree, ({ input, outcome }) => assert.equal(analyzeExpressionTree(input).postfix, outcome, input));
+  each(toolExamples.brackets, ({ input, outcome, error }) => {
+    assert.equal(traceBrackets(input).balanced, !error, input);
+    assert.equal(outcome, error ? 'Not balanced' : 'Balanced', input);
+  });
+});
+
+test('the topic catalog has no duplicates, is alphabetical, and every simulator has a topic', () => {
   const titles = allTopics.map(topic => topic.title);
   assert.equal(new Set(titles).size, titles.length, 'topic titles are unique');
   assert.equal(new Set(catalog.map(group => group.id)).size, catalog.length, 'category ids are unique');
-  assert.ok(catalog.every(group => group.topics.length > 0));
-  assert.deepEqual(liveTopics.map(topic => topic.href).sort(), ['/expressions', '/trees/avl', '/trees/bst']);
+  assert.ok(catalog.every(group => group.topics.length > 0), 'no category is empty');
+  assert.equal(groupStatus({ ...catalog[0], topics: [{ title: 'One' }] }), '1 topic');
+  assert.equal(groupStatus({ ...catalog[0], topics: [{ title: 'One' }, { title: 'Two' }] }), '2 topics');
+  for (const group of catalog) {
+    const titles = group.topics.map(topic => topic.title);
+    assert.deepEqual(titles, [...titles].sort((a, b) => a.localeCompare(b, 'en', { sensitivity: 'base', numeric: true })), `${group.title} is alphabetical`);
+  }
+  assert.deepEqual(allTopics.filter(topic => topic.simulator).map(topic => topic.simulator).sort(), [
+    '/expressions',
+    '/expressions/balanced-parentheses',
+    '/expressions/expression-tree',
+    '/trees/avl',
+    '/trees/bst',
+  ]);
   assert.equal(topicAt('/trees/avl')?.topic.title, 'AVL Tree');
   assert.equal(topicAt('/trees/avl')?.group.id, 'trees');
-  assert.equal(topicAt('/topics'), undefined, 'only tool pages count as an opened topic');
+  assert.equal(topicAt('/topics/avl-tree')?.topic.title, 'AVL Tree');
+  assert.equal(topicAt('/topics'), undefined, 'only guides and tools count as an opened topic');
+  assert.equal(new Set(allTopics.map(guideHref)).size, allTopics.length, 'every guide has its own address');
+  assert.equal(guideHref(topicAt('/topics/prims-algorithm')!.topic), '/topics/prims-algorithm');
 });
 
 test('every expression example gives its documented result', () => {
@@ -227,10 +252,10 @@ test('every tree example runs, and AVL examples rotate as documented', () => {
 });
 
 test('search needs every word, puts title matches first, and finds nothing for nonsense', () => {
-  const entry = (title: string, text = '', kind: SearchEntry['kind'] = 'Guide', soon = false): SearchEntry => ({ title, context: 'Guide', href: '/' + title, text, kind, soon });
-  const entries = [entry('Rotations', 'A child moves up.'), entry('Balance', 'Fixed with a rotation.'), entry('AVL Tree', '', 'Tool'), entry('Red-Black Tree', '', 'Topic', true)];
+  const entry = (title: string, text = '', kind: SearchEntry['kind'] = 'Guide'): SearchEntry => ({ title, context: 'Guide', href: '/' + title, text, kind });
+  const entries = [entry('Rotations', 'A child moves up.'), entry('Balance', 'Fixed with a rotation.'), entry('AVL Tree', '', 'Tool'), entry('Binary Tree Basics', '', 'Topic')];
   assert.deepEqual(searchEntries(entries, 'rotation').map(e => e.title), ['Rotations', 'Balance']);
-  assert.deepEqual(searchEntries(entries, 'TREE').map(e => e.title), ['AVL Tree', 'Red-Black Tree'], 'ignores case, and ready tools come first');
+  assert.deepEqual(searchEntries(entries, 'TREE').map(e => e.title), ['AVL Tree', 'Binary Tree Basics'], 'ignores case, and ready tools come first');
   assert.deepEqual(searchEntries(entries, 'rotation child').map(e => e.title), ['Rotations'], 'every word must match');
   assert.deepEqual(searchEntries(entries, 'zzz'), []);
   assert.deepEqual(searchEntries(entries, '   '), []);
@@ -243,17 +268,4 @@ test('search snippets show the match, and heading ids stay simple', () => {
   assert.ok(piece.includes('target') && piece.startsWith('…') && piece.endsWith('…'));
   assert.equal(searchSnippet('short text', 'text'), 'short text');
   assert.equal(toHeadingId('Worked Example: (8 + 4) * 3'), 'worked-example-8-4-3');
-});
-
-test('every unbuilt topic has its own Coming Soon address and a note', () => {
-  const soon = allTopics.filter(topic => !topic.href);
-  assert.equal(new Set(soon.map(topicHref)).size, soon.length, 'addresses are unique');
-  for (const topic of soon) {
-    assert.match(topicHref(topic), /^\/topics\/[a-z0-9-]+$/);
-    assert.equal(topicAt(topicHref(topic))?.topic, topic);
-    assert.ok(topicNotes[topic.title], `note for ${topic.title}`);
-  }
-  assert.deepEqual(Object.keys(topicNotes).sort(), soon.map(topic => topic.title).sort(), 'no notes for topics that are gone or built');
-  assert.equal(topicHref(liveTopics[0]), liveTopics[0].href);
-  assert.equal(topicAt("/topics/prims-algorithm")?.topic.title, "Prim's Algorithm");
 });

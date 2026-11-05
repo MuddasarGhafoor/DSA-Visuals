@@ -155,6 +155,21 @@ export function ExpressionWorkspace() {
           </dl>
 
           <div className="ws-body">
+            {frame && (
+              <StepsRail
+                counter={frame.step >= 0 ? `Step ${frame.step + 1} of ${data.steps.length}` : `${data.steps.length} steps`}
+                title={frame.title}
+                detail={frame.detail}
+                items={railItems}
+                current={frame.step}
+                onSelect={i => playback.move(frames.findIndex(f => f.step === i))}
+                extra={applyStep ? (
+                  <ol className="phases">
+                    {PHASES.map(p => <li key={p.phase} className={frame.phase === p.phase ? 'is-active' : ''}>{p.label}</li>)}
+                  </ol>
+                ) : null}
+              />
+            )}
             <section className={`stage stage-${view}`} aria-label="Visualization">
               <div className="seg seg-floating" role="group" aria-label="View">
                 {(['both', 'tree', 'stack'] as View[]).map(v => (
@@ -172,21 +187,6 @@ export function ExpressionWorkspace() {
                 </div>
               )}
             </section>
-            {frame && (
-              <StepsRail
-                counter={frame.step >= 0 ? `Step ${frame.step + 1} of ${data.steps.length}` : `${data.steps.length} steps`}
-                title={frame.title}
-                detail={frame.detail}
-                items={railItems}
-                current={frame.step}
-                onSelect={i => playback.move(frames.findIndex(f => f.step === i))}
-                extra={applyStep ? (
-                  <ol className="phases">
-                    {PHASES.map(p => <li key={p.phase} className={frame.phase === p.phase ? 'is-active' : ''}>{p.label}</li>)}
-                  </ol>
-                ) : null}
-              />
-            )}
           </div>
           <PlaybackBar state={playback} />
         </>

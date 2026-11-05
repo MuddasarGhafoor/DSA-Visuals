@@ -158,7 +158,6 @@ export function SiteSearch() {
               >
                 <span className="search-result-title">
                   <strong><Highlight text={entry.title} query={query} /></strong>
-                  {entry.soon && <em>Soon</em>}
                   <small>{entry.context}</small>
                 </span>
                 {snippet && <span className="search-result-text"><Highlight text={snippet} query={query} /></span>}

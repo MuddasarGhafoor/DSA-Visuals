@@ -1,7 +1,8 @@
 import { Fragment, type ReactNode } from 'react';
-import { guideDocs } from '@/content/guide';
-import { topicNotes } from '@/content/topic-notes';
-import { catalog, topicHref } from '@/lib/catalog';
+import { guideDocs, GuideHeading } from '@/content/guide';
+import { topicGuide } from '@/content/topic-guides';
+import { catalog, guideHref, simulatorHref } from '@/lib/catalog';
+import { guideSections, plainText } from '@/lib/guide-markdown';
 import { toHeadingId, type SearchEntry } from '@/lib/search';
 
 type Element = { type: unknown; props: Record<string, unknown> };
@@ -33,7 +34,7 @@ function sectionsOf(body: ReactNode) {
   const intro: string[] = [];
   const sections: { title: string; words: string[] }[] = [];
   for (const node of flatten(body)) {
-    if (isElement(node) && (node.type === 'h2' || node.type === 'h3')) sections.push({ title: textOf(node), words: [] });
+    if (isElement(node) && (node.type === GuideHeading || node.type === 'h3')) sections.push({ title: textOf(node), words: [] });
     else (sections.at(-1)?.words ?? intro).push(textOf(node));
   }
   return { intro: tidy(intro.join(' ')), sections: sections.map(section => ({ title: section.title, text: tidy(section.words.join(' ')) })) };
@@ -45,7 +46,12 @@ export function buildSearchIndex(): SearchEntry[] {
   for (const group of catalog) {
     entries.push({ title: group.title, context: 'Topics', href: `/topics#${group.id}`, text: group.summary, kind: 'Topic' });
     for (const topic of group.topics) {
-      entries.push({ title: topic.title, context: `${group.title} · ${topic.level}`, href: topicHref(topic), text: topicNotes[topic.title] ?? '', kind: topic.href ? 'Tool' : 'Topic', soon: !topic.href });
+      const guide = topicGuide(topic);
+      entries.push({ title: topic.title, context: group.title, href: guideHref(topic), text: plainText(guide.summary), kind: 'Topic' });
+      entries.push({ title: topic.title, context: 'Simulator', href: simulatorHref(topic), text: `Run ${topic.title} on your own input, one step at a time.`, kind: 'Tool' });
+      for (const section of guideSections(guide)) {
+        entries.push({ title: section.title, context: `${topic.title} Guide`, href: `${guideHref(topic)}#${section.id}`, text: section.text, kind: 'Guide' });
+      }
     }
   }
 
@@ -55,13 +61,6 @@ export function buildSearchIndex(): SearchEntry[] {
     entries.push({ title: doc.title, context: `Guide · ${doc.section}`, href: page, text: tidy(`${doc.lead} ${intro}`), kind: 'Guide' });
     for (const section of sections) {
       entries.push({ title: section.title, context: `Guide · ${doc.title}`, href: `${page}#${toHeadingId(section.title)}`, text: section.text, kind: 'Guide' });
-    }
-    for (const part of doc.parts ?? []) {
-      const inner = sectionsOf(part.body);
-      entries.push({ title: part.title, context: `Guide · ${doc.title}`, href: `${page}#${part.slug}`, text: tidy(`${part.lead} ${inner.intro}`), kind: 'Guide' });
-      for (const section of inner.sections) {
-        entries.push({ title: section.title, context: `Guide · ${doc.title} · ${part.title}`, href: `${page}#${part.slug}-${toHeadingId(section.title)}`, text: section.text, kind: 'Guide' });
-      }
     }
   }
 

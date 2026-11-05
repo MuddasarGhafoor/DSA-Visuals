@@ -1,5 +1,6 @@
 import type { ExprFrame } from '@/lib/expression-frames';
-import type { ExprNode } from '@/lib/expressions';
+import { displayToken, type ExprNode } from '@/lib/expressions';
+import type { BuildFrame, TraversalFrame } from '@/lib/expression-tree';
 import { balance, signed, type TreeMode, type TreeNode, type TreeStep, type TreeStepKind } from '@/lib/trees';
 import type { NodeTone, VisualNode } from './tree-canvas';
 
@@ -34,6 +35,46 @@ export const EXPRESSION_LEGEND: { tone: NodeTone; label: string }[] = [
   { tone: 'value', label: 'On the stack' },
   { tone: 'active', label: 'Being used' },
   { tone: 'done', label: 'Computed' },
+];
+
+/** An invisible root lets the canvas draw a stack of separate subtrees, which glide together as they join. */
+const forestOf = (children: VisualNode[]): VisualNode => ({ id: 'forest', label: '', shape: 'square', tone: 'muted', hidden: true, children });
+
+function buildVisual(node: ExprNode, frame: BuildFrame): VisualNode {
+  const tone: NodeTone = node.id === frame.activeId ? 'new' : frame.childIds.includes(node.id) ? 'active' : node.children.length ? 'op' : 'value';
+  return {
+    id: node.id,
+    label: node.children.length ? displayToken(node.token) : node.token,
+    shape: node.children.length ? 'square' : 'round',
+    tone,
+    children: node.children.map(child => buildVisual(child, frame)),
+  };
+}
+export const buildForest = (frame: BuildFrame): VisualNode => forestOf(frame.forest.map(node => buildVisual(node, frame)));
+
+export const BUILD_LEGEND: { tone: NodeTone; label: string }[] = [
+  { tone: 'value', label: 'Number' },
+  { tone: 'op', label: 'Operator' },
+  { tone: 'active', label: 'Being joined' },
+  { tone: 'new', label: 'Just added' },
+];
+
+export function traversalTree(node: ExprNode, frame: TraversalFrame): VisualNode {
+  const tone: NodeTone = node.id === frame.currentId ? 'active' : frame.visited.includes(node.id) ? 'done' : frame.path.includes(node.id) ? 'path' : 'muted';
+  return {
+    id: node.id,
+    label: node.children.length ? displayToken(node.token) : node.token,
+    shape: node.children.length ? 'square' : 'round',
+    tone,
+    children: node.children.map(child => traversalTree(child, frame)),
+  };
+}
+
+export const TRAVERSAL_LEGEND: { tone: NodeTone; label: string }[] = [
+  { tone: 'muted', label: 'Not reached' },
+  { tone: 'path', label: 'Walking through' },
+  { tone: 'active', label: 'Visiting' },
+  { tone: 'done', label: 'Visited' },
 ];
 
 const ACTIVE_TONES: Partial<Record<TreeStepKind, NodeTone>> = {

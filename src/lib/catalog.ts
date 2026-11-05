@@ -1,64 +1,69 @@
-import { ArrowDownWideNarrow, Calculator, Gauge, Grid3x3, Hash, Network, Puzzle, Rows3, Search, Server, Type, Waypoints, type LucideIcon } from 'lucide-react';
+import { ArrowDownWideNarrow, Calculator, Gauge, Grid3x3, Hash, Network, Puzzle, Rows3, Search, Waypoints, type LucideIcon } from 'lucide-react';
 
-export type TopicLevel = 'Core' | 'Important' | 'Advanced';
+/** Every topic has a guide at /topics/<slug>. Simulator is the address of its tool, once that tool is built. */
+export type Topic = { title: string; simulator?: string };
+export type TopicGroup = { id: string; title: string; summary: string; Icon: LucideIcon; topics: Topic[] };
 
-/** A topic without an href is marked "Soon" and has a Coming Soon page. Building a module means adding its href here. */
-export type Topic = { title: string; level: TopicLevel; href?: string };
-export type TopicGroup = { id: string; title: string; shortTitle?: string; summary: string; Icon: LucideIcon; topics: Topic[] };
+const topic = (title: string, simulator?: string): Topic => ({ title, simulator });
 
-export const LEVELS: { level: TopicLevel; hint: string }[] = [
-  { level: 'Core', hint: 'Start here. Most courses and roadmaps cover these.' },
-  { level: 'Important', hint: 'Build on the core. These come up often.' },
-  { level: 'Advanced', hint: 'Go deeper once the rest feels comfortable.' },
-];
+const byTitle = (a: Topic, b: Topic) => a.title.localeCompare(b.title, 'en', { sensitivity: 'base', numeric: true });
 
-const core = (title: string, href?: string): Topic => ({ title, level: 'Core', href });
-const important = (title: string): Topic => ({ title, level: 'Important' });
-const advanced = (title: string): Topic => ({ title, level: 'Advanced' });
-
-// Categories are listed in a suggested learning order.
-export const catalog: TopicGroup[] = [
+// Categories are in a suggested learning order. Topics are shown alphabetically inside each one.
+export const catalog: TopicGroup[] = ([
   {
     id: 'foundations',
     title: 'Foundations',
-    summary: 'How to measure an algorithm, and how recursion works.',
+    summary: 'What data structures are, how to measure algorithms, how recursion works, and which problems are hard.',
     Icon: Gauge,
-    topics: [core('Big-O Growth Comparison'), core('Best, Average, and Worst Case'), core('Recursion and the Call Stack'), core('Iteration vs Recursion'), important('Bit Manipulation')],
+    topics: [
+      topic('Abstract Data Types'), topic('Asymptotic Notation'), topic('Best, Average, and Worst Case'), topic('Big-O Growth Comparison'), topic('Bit Manipulation'), topic('GCD'), topic('Iteration vs Recursion'), topic('Master Theorem'),
+      topic('NP-Complete Problems'), topic('P vs NP'), topic('Recurrences'), topic('Recursion and the Call Stack'), topic('Space Complexity'), topic('Time-Space Tradeoff'), topic('Tower of Hanoi'),
+    ],
   },
   {
     id: 'linear',
     title: 'Linear Structures',
     summary: 'Values stored one after another.',
     Icon: Rows3,
-    topics: [core('Arrays'), core('Dynamic Arrays'), core('Strings'), core('Linked Lists'), core('Doubly and Circular Linked Lists'), core('Stack'), core('Queue'), core('Circular Queue'), core('Deque'), important('Matrix')],
+    topics: [
+      topic('Arrays'), topic('Bit Array'), topic('Circular Queue'), topic('Deque'), topic('Doubly and Circular Linked Lists'), topic('Dynamic Arrays'), topic('Linked Lists'), topic('Queue'), topic('Stack'), topic('Strings'),
+    ],
   },
   {
     id: 'hashing',
     title: 'Hashing',
     summary: 'Finding a value by computing where it belongs.',
     Icon: Hash,
-    topics: [core('Hash Tables'), core('Chaining'), core('Open Addressing'), core('Rehashing'), core('Sets and Maps')],
+    topics: [
+      topic('Chaining'), topic('Hash Functions'), topic('Hash Tables'), topic('Linear/Quadratic Probing and Double Hashing'), topic('Open Addressing'), topic('Rehashing'), topic('Sets and Maps'), topic('String Hashing'),
+    ],
   },
   {
     id: 'searching',
     title: 'Searching',
-    summary: 'Finding a value in a collection.',
+    summary: 'Finding a value in a collection, or a pattern in text.',
     Icon: Search,
-    topics: [core('Linear Search'), core('Binary Search'), important('Binary Search on the Answer')],
+    topics: [
+      topic('Binary Search'), topic('KMP'), topic('Linear Search'), topic('Naive Pattern Matching'), topic('Rabin-Karp'),
+    ],
   },
   {
     id: 'sorting',
     title: 'Sorting',
     summary: 'Putting values in order, and what each method costs.',
     Icon: ArrowDownWideNarrow,
-    topics: [core('Bubble Sort'), core('Selection Sort'), core('Insertion Sort'), core('Merge Sort'), core('Quick Sort'), core('Heap Sort'), core('Stable vs Unstable Sorting'), important('Counting Sort'), important('Radix Sort'), important('Bucket Sort')],
+    topics: [
+      topic('Bubble Sort'), topic('Bucket Sort'), topic('Counting Sort'), topic('Heap Sort'), topic('Insertion Sort'), topic('Merge Sort'), topic('Quick Sort'), topic('Radix Sort'), topic('Selection Sort'), topic('Stable vs Unstable Sorting'),
+    ],
   },
   {
     id: 'trees',
-    title: 'Trees',
+    title: 'Trees and Heaps',
     summary: 'Hierarchies that make searching and ordering fast.',
     Icon: Network,
-    topics: [core('Binary Tree Basics'), core('Binary Search Tree', '/trees/bst'), core('AVL Tree', '/trees/avl'), core('Heaps'), core('Priority Queue'), important('Trie'), important('Red-Black Tree'), advanced('B-Tree and B+ Tree'), advanced('Segment Tree'), advanced('Fenwick Tree')],
+    topics: [
+      topic('AVL Tree', '/trees/avl'), topic('Binary Search Tree', '/trees/bst'), topic('Binary Tree Basics'), topic('Binomial Heap'), topic('Heaps'), topic('Priority Queue'), topic('Tree Representations'), topic('Tree Traversals'),
+    ],
   },
   {
     id: 'graphs',
@@ -66,67 +71,62 @@ export const catalog: TopicGroup[] = [
     summary: 'Nodes and connections: paths, networks, and dependencies.',
     Icon: Waypoints,
     topics: [
-      core('Adjacency List vs Matrix'), core('BFS'), core('DFS'), core('Dijkstra'), core("Prim's Algorithm"), core("Kruskal's Algorithm"),
-      important('Topological Sort'), important('Cycle Detection'), important('Connected Components'), important('Union-Find'), important('Bellman-Ford'), important('Floyd-Warshall'),
-      advanced('A* Search'), advanced('Maximum Flow'), advanced('Bipartite Matching'),
+      topic('0-1 BFS'), topic('A* Search'), topic('Adjacency List vs Matrix'), topic('Bellman-Ford'), topic('BFS'), topic('Bidirectional Search'), topic('DFS'), topic('Dijkstra'), topic('Floyd-Warshall'),
+      topic('Graph Basics'), topic('Graph Coloring'), topic('Iterative Deepening DFS'), topic("Kirchhoff's Theorem"), topic("Kruskal's Algorithm"), topic('Min Cut'), topic("Prim's Algorithm"), topic('Topological Sort'), topic('Union-Find'),
     ],
   },
   {
     id: 'techniques',
     title: 'Problem-Solving Techniques',
-    shortTitle: 'Problem-Solving T',
     summary: 'Reusable ways to approach a new problem.',
     Icon: Puzzle,
-    topics: [core('Brute Force'), core('Two Pointers'), core('Sliding Window'), core('Divide and Conquer'), core('Greedy Algorithms'), core('Backtracking'), important('Prefix Sums'), important('Monotonic Stack'), important('Intervals')],
+    topics: [
+      topic('Activity Selection'), topic('Alpha-Beta Pruning'), topic('Backtracking'), topic('Brute Force'), topic('Divide and Conquer'), topic('Fractional Knapsack'), topic('Greedy Algorithms'),
+      topic('Hill Climbing'), topic('Huffman Coding'), topic('Job Sequencing'), topic('Minimax'), topic('N-Queens'), topic('Sum of Subsets'),
+    ],
   },
   {
     id: 'dp',
     title: 'Dynamic Programming',
     summary: 'Solving big problems by reusing smaller answers.',
     Icon: Grid3x3,
-    topics: [core('Memoization vs Tabulation'), core('0/1 Knapsack'), core('Coin Change'), core('Longest Common Subsequence'), important('Edit Distance'), important('Longest Increasing Subsequence'), important('Matrix Chain Multiplication')],
-  },
-  {
-    id: 'strings',
-    title: 'String Algorithms',
-    summary: 'Finding patterns in text efficiently.',
-    Icon: Type,
-    topics: [important('KMP'), important('Rabin-Karp'), advanced('Boyer-Moore'), advanced('Suffix Array'), advanced('Regex Matching')],
+    topics: [
+      topic('0/1 Knapsack'), topic('Assembly Line Scheduling'), topic('Coin Change'), topic('Divide and Conquer DP'), topic('Edit Distance'), topic('Fibonacci (DP)'), topic('Longest Common Subsequence'), topic('Longest Common Substring'), topic('Longest Increasing Subsequence'), topic('Longest Palindromic Subsequence'),
+      topic('Matrix Chain Multiplication'), topic('Memoization vs Tabulation'), topic('Min Cost Path'), topic('Optimal BST'), topic('Partition Problem'), topic('Rod Cutting'), topic('Shortest Common Supersequence'), topic('Subset Sum'), topic('Unbounded Knapsack'), topic('Weighted Job Scheduling'),
+    ],
   },
   {
     id: 'expressions',
-    title: 'Expressions and Parsing',
+    title: 'Expressions',
     summary: 'How programs read and work out calculations.',
     Icon: Calculator,
-    topics: [core('Expression Evaluator', '/expressions'), important('Infix to Postfix (Shunting Yard)'), important('Tokenizer')],
+    topics: [
+      topic('Balanced Parentheses', '/expressions/balanced-parentheses'), topic('Expression Evaluator', '/expressions'), topic('Expression Tree', '/expressions/expression-tree'), topic('Notation Conversion'),
+    ],
   },
-  {
-    id: 'systems',
-    title: 'In Real Systems',
-    summary: 'Structures behind caches, databases, and distributed systems.',
-    Icon: Server,
-    topics: [important('LRU Cache'), important('Bloom Filter'), important('Skip List'), important('Consistent Hashing'), advanced('B+ Tree Database Index'), advanced('LSM Tree')],
-  },
-];
+] satisfies TopicGroup[]).map(group => ({ ...group, topics: [...group.topics].sort(byTitle) }));
 
 export const allTopics = catalog.flatMap(group => group.topics);
-export const liveTopics = allTopics.filter(topic => topic.href);
 
 export function groupStatus(group: TopicGroup): string {
-  const live = group.topics.filter(topic => topic.href).length;
-  return live ? `${live} of ${group.topics.length} ready` : `${group.topics.length} topics`;
+  const total = group.topics.length;
+  return `${total} ${total === 1 ? 'topic' : 'topics'}`;
 }
 
-/** A topic's own tool, or its Coming Soon page. */
-export function topicHref(topic: Topic): string {
-  const slug = topic.title.toLowerCase().replace(/'/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-  return topic.href ?? `/topics/${slug}`;
-}
+export const topicSlug = (item: Topic) => item.title.toLowerCase().replace(/'/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
-/** The topic whose page is at this path, with its category. */
+/** The address of a topic's guide. */
+export const guideHref = (item: Topic) => `/topics/${topicSlug(item)}`;
+
+/** The address of a topic's simulator. A few topics have a page of their own, and the rest share /simulate. */
+export const simulatorHref = (item: Topic) => item.simulator ?? `/simulate/${topicSlug(item)}`;
+
+export const topicByTitle = (title: string) => allTopics.find(item => item.title === title);
+
+/** The topic whose guide or simulator is at this path, with its category. */
 export function topicAt(path: string): { topic: Topic; group: TopicGroup } | undefined {
   for (const group of catalog) {
-    const topic = group.topics.find(t => topicHref(t) === path);
-    if (topic) return { topic, group };
+    const found = group.topics.find(item => guideHref(item) === path || simulatorHref(item) === path);
+    if (found) return { topic: found, group };
   }
 }

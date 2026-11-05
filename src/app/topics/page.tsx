@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
-import { TopicRow } from '@/components/site/topic-row';
+import Link from 'next/link';
+import { BookOpen, Play } from 'lucide-react';
 import { TopicsSidebar } from '@/components/site/topics-sidebar';
-import { allTopics, catalog, groupStatus, LEVELS, liveTopics } from '@/lib/catalog';
+import { allTopics, catalog, groupStatus, guideHref, simulatorHref } from '@/lib/catalog';
 
 export const metadata: Metadata = { title: 'Topics' };
 
@@ -13,12 +14,7 @@ export default function TopicsPage() {
       <div className="topics-main">
         <header className="topics-head">
           <h1>Topics</h1>
-          <p>{allTopics.length} topics in {catalog.length} categories, in a suggested learning order. {liveTopics.length} are ready now, and the rest are on the way.</p>
-          <dl className="topics-levels">
-            {LEVELS.map(({ level, hint }) => (
-              <div key={level}><dt>{level}</dt><dd>{hint}</dd></div>
-            ))}
-          </dl>
+          <p>{allTopics.length} topics in {catalog.length} categories. Every topic has a guide and a simulator.</p>
         </header>
 
         {catalog.map(group => (
@@ -31,19 +27,20 @@ export default function TopicsPage() {
               </div>
               <span>{groupStatus(group)}</span>
             </div>
-            <div className="level-grid">
-              {LEVELS.map(({ level }) => {
-                const topics = group.topics.filter(topic => topic.level === level);
-                return (
-                  <div className={topics.length ? '' : 'is-empty'} key={level}>
-                    {topics.length > 0 && <h3>{level}</h3>}
-                    <ul>
-                      {topics.map(topic => <li key={topic.title}><TopicRow topic={topic} /></li>)}
-                    </ul>
-                  </div>
-                );
-              })}
-            </div>
+            <table className="topic-table">
+              <thead>
+                <tr><th scope="col">Topic</th><th scope="col">Guide</th><th scope="col">Simulator</th></tr>
+              </thead>
+              <tbody>
+                {group.topics.map(topic => (
+                  <tr key={topic.title}>
+                    <td>{topic.title}</td>
+                    <td><Link className="topic-link" href={guideHref(topic)} aria-label={`Read the ${topic.title} guide`}><BookOpen size={13} />Read</Link></td>
+                    <td><Link className="topic-link" href={simulatorHref(topic)} aria-label={`Open the ${topic.title} simulator`}><Play size={13} />Open</Link></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </section>
         ))}
       </div>

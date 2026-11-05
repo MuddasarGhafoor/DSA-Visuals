@@ -190,6 +190,15 @@ export function TreeWorkspace({ mode }: { mode: TreeMode }) {
       </dl>
 
       <div className="ws-body">
+        <StepsRail
+          counter={step ? `Step ${playback.index + 1} of ${steps.length}` : undefined}
+          title={step?.title ?? intro.title}
+          detail={step?.message ?? intro.detail}
+          items={railItems}
+          current={playback.index}
+          onSelect={playback.move}
+          empty="Each comparison, change, and rotation will be listed here."
+        />
         <section className="stage" aria-label="Visualization">
           <div className="stage-main">
             <TreeCanvas
@@ -208,15 +217,6 @@ export function TreeWorkspace({ mode }: { mode: TreeMode }) {
             />
           </div>
         </section>
-        <StepsRail
-          counter={step ? `Step ${playback.index + 1} of ${steps.length}` : undefined}
-          title={step?.title ?? intro.title}
-          detail={step?.message ?? intro.detail}
-          items={railItems}
-          current={playback.index}
-          onSelect={playback.move}
-          empty="Each comparison, change, and rotation will be listed here."
-        />
       </div>
       <PlaybackBar state={playback} />
 

@@ -4,6 +4,8 @@ import type { TreeMode, TreeOperation } from '../lib/trees.ts';
 export type ExpressionExample = { input: string; notation: Notation; about: string; result?: number; error?: boolean };
 export type TreeExample = { title: string; about: string; seed?: string; operation: TreeOperation; values: string; rotations?: number };
 export type ExampleLevel<T> = { level: string; hint: string; items: T[] };
+/** For the expression tools. Outcome is shown in the list, and a test checks it against the engine. */
+export type ToolExample = { input: string; about: string; outcome: string; error?: boolean };
 
 export const expressionExamples: ExampleLevel<ExpressionExample>[] = [
   {
@@ -145,3 +147,71 @@ const avl: ExampleLevel<TreeExample>[] = [
 ];
 
 export const treeExamples: Record<TreeMode, ExampleLevel<TreeExample>[]> = { bst, avl };
+
+export const toolExamples: Record<'tree' | 'brackets', ExampleLevel<ToolExample>[]> = {
+  tree: [
+    {
+      level: 'Easy',
+      hint: 'Small trees',
+      items: [
+        { input: '2 + 3', about: 'One operator, two leaves', outcome: '2 3 +' },
+        { input: '2 + 3 * 4', about: 'The operator that runs last is the root', outcome: '2 3 4 * +' },
+        { input: '(2 + 3) * 4', about: 'Parentheses move the root', outcome: '2 3 + 4 *' },
+      ],
+    },
+    {
+      level: 'Medium',
+      hint: 'Tree shapes',
+      items: [
+        { input: '10 - 4 - 3', about: 'Leans left', outcome: '10 4 - 3 -' },
+        { input: '2 ^ 3 ^ 2', about: 'Leans right', outcome: '2 3 2 ^ ^' },
+        { input: '-(3 + 4) * 2', about: 'A unary node has one child', outcome: '3 4 + ~ 2 *' },
+      ],
+    },
+    {
+      level: 'Hard',
+      hint: 'Larger trees',
+      items: [
+        { input: '((2 + 3) * (4 - 1)) ^ 2 / 5', about: 'Balanced, then deep', outcome: '2 3 + 4 1 - * 2 ^ 5 /' },
+        { input: '1 / 0', about: "Builds fine, even though it can't be evaluated", outcome: '1 0 /' },
+      ],
+    },
+    {
+      level: 'Notations',
+      hint: 'A tree can be built from any notation',
+      items: [
+        { input: '* + 2 3 4', about: 'From prefix', outcome: '2 3 + 4 *' },
+        { input: '2 3 + 4 *', about: 'From postfix', outcome: '2 3 + 4 *' },
+      ],
+    },
+  ],
+  brackets: [
+    {
+      level: 'Easy',
+      hint: 'Simple pairs',
+      items: [
+        { input: '()', about: 'One pair', outcome: 'Balanced' },
+        { input: '()[]{}', about: 'Side by side', outcome: 'Balanced' },
+        { input: '([{}])', about: 'Nested', outcome: 'Balanced' },
+      ],
+    },
+    {
+      level: 'Medium',
+      hint: 'Real code',
+      items: [
+        { input: 'f(a[0], {b: (1 + 2)})', about: 'Other characters are skipped', outcome: 'Balanced' },
+        { input: 'if (a[i] > (b + 1)) { run(a) }', about: 'Like a line of code', outcome: 'Balanced' },
+      ],
+    },
+    {
+      level: 'Error checks',
+      hint: 'Each way it can go wrong',
+      items: [
+        { input: '([)]', about: 'Right counts, wrong order', outcome: 'Not balanced', error: true },
+        { input: '(()', about: 'One is left open', outcome: 'Not balanced', error: true },
+        { input: '())', about: 'A closing bracket with no partner', outcome: 'Not balanced', error: true },
+        { input: '{(})', about: "A counter would miss this, and a stack doesn't", outcome: 'Not balanced', error: true },
+      ],
+    },
+  ],
+};

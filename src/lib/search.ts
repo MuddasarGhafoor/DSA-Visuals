@@ -1,11 +1,10 @@
 export type SearchEntry = {
   title: string;
-  /** Where it lives, such as "Guide · AVL Tree". */
+  /** Where it lives, such as "AVL Tree Guide". */
   context: string;
   href: string;
   text: string;
   kind: 'Tool' | 'Topic' | 'Guide';
-  soon?: boolean;
 };
 
 export const toHeadingId = (text: string) => text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
@@ -22,7 +21,7 @@ export function searchEntries(entries: SearchEntry[], query: string, limit = 12)
     const context = entry.context.toLowerCase();
     const text = entry.text.toLowerCase();
     if (!words.every(word => title.includes(word) || context.includes(word) || text.includes(word))) return [];
-    let score = entry.kind === 'Tool' ? 5 : entry.soon ? -2 : 0;
+    let score = entry.kind === 'Tool' ? 5 : 0;
     if (title === whole) score += 100;
     else if (title.startsWith(whole)) score += 60;
     score += words.filter(word => title.includes(word)).length * 20;

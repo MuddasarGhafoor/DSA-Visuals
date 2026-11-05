@@ -28,8 +28,8 @@ export const MAX_EXPRESSION_LENGTH = 500;
 
 const NUMERIC = /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)$/;
 const OPERATOR = /^[+\-*/^~]$/;
-const PRECEDENCE: Record<string, number> = { '+': 1, '-': 1, '*': 2, '/': 2, '^': 4 };
-const UNARY_PRECEDENCE = 3; // Below ^ so that -2^2 is -(2^2), above * and /.
+export const PRECEDENCE: Record<string, number> = { '+': 1, '-': 1, '*': 2, '/': 2, '^': 4 };
+export const UNARY_PRECEDENCE = 3; // Below ^ so that -2^2 is -(2^2), above * and /.
 
 export const formatNumber = (n: number): string => (Number.isInteger(n) ? String(n + 0) : String(Number(n.toPrecision(12))));
 
@@ -43,7 +43,7 @@ export const displayToken = (token: string): string => ({ '~': '−', '-': '−'
 
 type MakeNode = (token: string, children?: ExprNode[]) => ExprNode;
 
-function tokenizeInfix(input: string): string[] {
+export function tokenizeInfix(input: string): string[] {
   const raw: string[] = [];
   let offset = 0;
   while (offset < input.length) {
@@ -206,18 +206,25 @@ function toInfix(node: ExprNode): string {
 const toPrefix = (node: ExprNode): string => [node.token, ...node.children.map(toPrefix)].join(' ');
 const toPostfix = (node: ExprNode): string => [...node.children.map(toPostfix), node.token].join(' ');
 
-export function analyzeExpression(input: string, choice: NotationChoice = 'auto'): ExpressionResult {
+/** Typed math symbols become the plain ones the parser reads. Each stays one character, so positions don't shift. */
+export const normalizeSymbols = (input: string): string => input.replace(/×/g, '*').replace(/÷/g, '/').replace(/[−–]/g, '-');
+
+/** Parses without evaluating, so a tree can still be drawn for something like 1 / 0. */
+export function parseExpression(input: string, choice: NotationChoice = 'auto'): { root: ExprNode; notation: Notation } {
   if (!input.trim()) throw new Error('Enter an expression to begin.');
   if (input.length > MAX_EXPRESSION_LENGTH) throw new Error(`Keep expressions to ${MAX_EXPRESSION_LENGTH} characters or fewer.`);
-  const text = input.replace(/×/g, '*').replace(/÷/g, '/').replace(/[−–]/g, '-');
-
+  const text = normalizeSymbols(input);
   let id = 0;
   const make: MakeNode = (token, children = []) => ({ id: `e${id++}`, token, children });
-  const { root, notation } =
-    choice === 'auto'
-      ? parseAuto(text, make)
-      : { root: choice === 'infix' ? parseInfix(text, make) : parseStackNotation(text, choice, make), notation: choice };
+  return choice === 'auto'
+    ? parseAuto(text, make)
+    : { root: choice === 'infix' ? parseInfix(text, make) : parseStackNotation(text, choice, make), notation: choice };
+}
 
+export const notationsOf = (root: ExprNode) => ({ infix: toInfix(root), prefix: toPrefix(root), postfix: toPostfix(root) });
+
+export function analyzeExpression(input: string, choice: NotationChoice = 'auto'): ExpressionResult {
+  const { root, notation } = parseExpression(input, choice);
   const { result, steps } = evaluateTree(root);
   return { root, notation, infix: toInfix(root), prefix: toPrefix(root), postfix: toPostfix(root), result, steps };
 }

@@ -18,6 +18,8 @@ export type VisualNode = {
   centerOverChild?: boolean; // Unary operators sit straight above their one child.
   left?: VisualNode | null;
   right?: VisualNode | null;
+  children?: VisualNode[]; // For trees whose nodes can have any number of children. Use instead of left and right.
+  hidden?: boolean; // An invisible root, which lets a canvas draw several separate trees side by side.
 };
 
 type Point = { x: number; y: number };
@@ -34,7 +36,47 @@ const MAX_SCALE = 1.25;
 
 const nodeWidth = (label: string) => Math.max(NODE_HEIGHT, label.length * 7.6 + 16);
 
+const GAP = 14;
+const LEGEND_ROOM = 40;
+
+/** Leaves take the width they need, and each parent sits over the middle of its children. */
+function layoutGeneral(root: VisualNode) {
+  const placed: { node: VisualNode; parent?: VisualNode; depth: number }[] = [];
+  const positions: Record<string, Point> = {};
+  let cursor = 0;
+
+  const shift = (node: VisualNode, by: number) => {
+    positions[node.id].x += by;
+    node.children?.forEach(child => shift(child, by));
+  };
+
+  function visit(node: VisualNode, depth: number, parent?: VisualNode) {
+    placed.push({ node, parent, depth });
+    const start = cursor;
+    const width = node.hidden ? 0 : nodeWidth(node.label) + GAP;
+    const kids = node.children ?? [];
+    kids.forEach(child => visit(child, depth + 1, node));
+    const spread = cursor - start;
+    if (spread < width) {
+      kids.forEach(child => shift(child, (width - spread) / 2)); // A wide parent makes room, so it doesn't overlap its neighbors.
+      cursor = start + width;
+    }
+    const x = kids.length ? (positions[kids[0].id].x + positions[kids.at(-1)!.id].x) / 2 : start + width / 2;
+    positions[node.id] = { x, y: depth * LEVEL };
+  }
+  visit(root, root.hidden ? -1 : 0);
+
+  const xs = placed.filter(p => !p.node.hidden).map(p => positions[p.node.id].x);
+  const minX = xs.length ? Math.min(...xs) : 0;
+  const maxX = xs.length ? Math.max(...xs) : 0;
+  for (const id of Object.keys(positions)) positions[id].x -= minX;
+  // The extra height keeps the bottom row clear of the legend.
+  const content = { width: maxX - minX, height: placed.reduce((max, p) => Math.max(max, p.depth), 0) * LEVEL + LEGEND_ROOM };
+  return { placed, positions, content };
+}
+
 function layout(root: VisualNode | null) {
+  if (root?.children) return layoutGeneral(root);
   const placed: { node: VisualNode; parent?: VisualNode; depth: number }[] = [];
   const positions: Record<string, Point> = {};
   let slot = 0;
@@ -147,7 +189,7 @@ function CanvasContent({ root, trail = [], duration = 480, bare = false, empty, 
   const drag = useRef<Point | null>(null);
 
   const { placed, positions, content } = useMemo(() => layout(root), [root]);
-  const parents = useMemo(() => new Map(placed.map(p => [p.node.id, p.parent?.id])), [placed]);
+  const parents = useMemo(() => new Map(placed.map(p => [p.node.id, p.parent?.hidden ? undefined : p.parent?.id])), [placed]);
 
   // Absorbed nodes aim for the node that swallows them.
   const targets: Record<string, Point> = {};
@@ -179,7 +221,7 @@ function CanvasContent({ root, trail = [], duration = 480, bare = false, empty, 
           className={bare ? 'canvas-svg' : 'canvas-svg is-draggable'}
           viewBox={`${view.x} ${view.y} ${view.w} ${view.h}`}
           role="img"
-          aria-label={`${label}: ${placed.filter(p => !p.node.absorbedInto).map(p => p.node.label).join(', ')}`}
+          aria-label={`${label}: ${placed.filter(p => !p.node.absorbedInto && !p.node.hidden).map(p => p.node.label).join(', ')}`}
           onPointerDown={bare ? undefined : e => {
             e.currentTarget.setPointerCapture(e.pointerId);
             drag.current = { x: e.clientX, y: e.clientY };
@@ -190,13 +232,14 @@ function CanvasContent({ root, trail = [], duration = 480, bare = false, empty, 
         >
           <g transform={`translate(${centerX + pan.x} ${centerY + pan.y}) scale(${zoom}) translate(${-centerX} ${-centerY})`}>
             {placed.map(({ node, parent }) => {
-              if (!parent) return null;
+              if (!parent || parent.hidden) return null;
               const a = at(parent.id);
               const b = at(node.id);
               const classes = ['edge', hot.has(node.id) && hot.has(parent.id) ? 'is-hot' : '', node.absorbedInto ? 'is-gone' : ''].join(' ');
               return <line key={node.id} className={classes} x1={a.x} y1={a.y} x2={b.x} y2={b.y} />;
             })}
             {placed.map(({ node }) => {
+              if (node.hidden) return null;
               const p = at(node.id);
               const width = nodeWidth(node.label);
               return (

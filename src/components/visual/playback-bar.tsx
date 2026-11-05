@@ -1,7 +1,10 @@
 'use client';
 
 import { ChevronFirst, ChevronLast, ChevronLeft, ChevronRight, Pause, Play } from 'lucide-react';
+import { Dropdown } from '@/components/site/dropdown';
 import type { PlaybackState } from '@/lib/use-playback';
+
+const SPEEDS = [0.5, 1, 2, 4].map(value => ({ value, label: `${value}×` }));
 
 export function PlaybackBar({ state }: { state: PlaybackState }) {
   const { index, count, playing, speed, setSpeed, move, toggle } = state;
@@ -32,12 +35,7 @@ export function PlaybackBar({ state }: { state: PlaybackState }) {
         onChange={e => move(Number(e.target.value))}
       />
       <span className="playback-count">{count ? index + 1 : 0} / {count}</span>
-      <select className="playback-speed" aria-label="Speed" value={speed} onChange={e => setSpeed(Number(e.target.value))}>
-        <option value={0.5}>0.5×</option>
-        <option value={1}>1×</option>
-        <option value={2}>2×</option>
-        <option value={4}>4×</option>
-      </select>
+      <Dropdown label="Speed" value={speed} options={SPEEDS} onChange={setSpeed} />
     </div>
   );
 }

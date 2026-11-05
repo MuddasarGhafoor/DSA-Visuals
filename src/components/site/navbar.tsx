@@ -2,9 +2,8 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useEffect, useRef, useState } from 'react';
-import { ArrowRight, ArrowUpRight, ChevronDown, Moon, Sun } from 'lucide-react';
-import { allTopics, catalog, groupStatus, topicAt } from '@/lib/catalog';
+import { CircleHelp, Moon, Sun } from 'lucide-react';
+import { topicAt } from '@/lib/catalog';
 import { Logo } from './logo';
 import { SiteSearch } from './site-search';
 
@@ -23,29 +22,9 @@ function toggleTheme() {
 
 export function Navbar() {
   const path = usePathname();
-  const [open, setOpen] = useState(false);
-  const menu = useRef<HTMLDivElement>(null);
   const opened = topicAt(path);
-
-  useEffect(() => setOpen(false), [path]);
-
-  useEffect(() => {
-    if (!open) return;
-    const onDown = (e: PointerEvent) => {
-      if (!menu.current?.contains(e.target as Node)) setOpen(false);
-    };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOpen(false);
-    };
-    document.addEventListener('pointerdown', onDown);
-    document.addEventListener('keydown', onKey);
-    return () => {
-      document.removeEventListener('pointerdown', onDown);
-      document.removeEventListener('keydown', onKey);
-    };
-  }, [open]);
-
-  const inTopics = path === '/topics' || Boolean(opened);
+  const inTopics = path.startsWith('/topics') || Boolean(opened);
+  const inGuide = path.startsWith('/guide');
 
   return (
     <header className="nav">
@@ -55,29 +34,7 @@ export function Navbar() {
         <span className="nav-sep" aria-hidden="true" />
         <nav className="nav-links" aria-label="Main">
           <Link href="/" className={`nav-link ${path === '/' ? 'is-active' : ''}`} aria-current={path === '/' ? 'page' : undefined}>Home</Link>
-          <Link href="/guide" className={`nav-link ${path.startsWith('/guide') ? 'is-active' : ''}`} aria-current={path.startsWith('/guide') ? 'page' : undefined}>Guide</Link>
-          <div className="nav-menu" ref={menu}>
-            <button className={`nav-link ${inTopics ? 'is-active' : ''}`} aria-expanded={open} onClick={() => setOpen(o => !o)}>
-              Topics <ChevronDown size={13} />
-            </button>
-            {open && (
-              <div className="nav-panel">
-                <div className="nav-panel-grid">
-                  {catalog.map(group => (
-                    <Link className="nav-panel-group" key={group.id} href={`/topics#${group.id}`} onClick={() => setOpen(false)}>
-                      <group.Icon size={15} />
-                      <span>
-                        <strong>{group.title}</strong>
-                        <small>{groupStatus(group)}</small>
-                      </span>
-                      <ArrowUpRight className="nav-panel-arrow" size={15} />
-                    </Link>
-                  ))}
-                </div>
-                <Link className="nav-panel-all" href="/topics" onClick={() => setOpen(false)}>All {allTopics.length} Topics<ArrowRight size={13} /></Link>
-              </div>
-            )}
-          </div>
+          <Link href="/topics" className={`nav-link ${inTopics ? 'is-active' : ''}`} aria-current={path === '/topics' ? 'page' : undefined}>Topics</Link>
         </nav>
       </div>
 
@@ -85,6 +42,7 @@ export function Navbar() {
 
       <div className="nav-end">
         <SiteSearch />
+        <Link href="/guide" className={`icon-btn nav-guide ${inGuide ? 'is-active' : ''}`} aria-label="Guide" title="Guide" aria-current={inGuide ? 'page' : undefined}><CircleHelp size={15} /></Link>
         <button className="icon-btn nav-theme" onClick={toggleTheme} aria-label="Switch between light and dark theme" title="Switch theme">
           <Sun className="only-dark" size={15} />
           <Moon className="only-light" size={15} />
