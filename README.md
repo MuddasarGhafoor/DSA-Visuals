@@ -33,13 +33,21 @@ Every one of the 111 topics has its own long-form guide at `/topics/<topic>`, ex
 
 ### Simulators
 
+<div align="center">
+
 <img src="docs/screenshots/simulators.png" alt="The Dijkstra simulator: the steps panel on the left, the graph in the center, and the distance table on the right." width="720">
+
+<div>
 
 Every one of the 111 topics has a simulator. Each page shows what suits its topic, such as boxes for an array, linked nodes for a list, bars for sorting, buckets for hashing, a table for dynamic programming, a graph for shortest paths, pegs for the Tower of Hanoi, a timeline for job scheduling, or a console of results. Only the inputs that apply are shown, and many topics let you switch method, such as the pivot rule in quick sort, or any of the six conversions between infix, prefix, and postfix.
 
 ### Expression Evaluator
 
+<div align="center">
+
 <img src="docs/screenshots/expression-light.png" alt="The expression tree during a compute step, with the postfix tape, working tray, and stack beside it." width="720">
+
+<div>
 
 | Feature | Details |
 | --- | --- |
@@ -70,7 +78,11 @@ Two tools that use a stack to draw and check expressions, each with its own page
 
 ### AVL Tree
 
+<div align="center">
+
 <img src="docs/screenshots/avl-rotation.png" alt="An AVL tree mid-rotation, showing height and balance factor under every node." width="720">
+
+<div>
 
 | Feature | Details |
 | --- | --- |
